@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 	"io"
 )
 
@@ -15,7 +16,8 @@ type AuditLogger struct {
 }
 
 var _ interface {
-	//graphql.OperationInterceptor
+	graphql.OperationContextMutator
+	graphql.OperationInterceptor
 	graphql.FieldInterceptor
 	graphql.ResponseInterceptor
 	graphql.HandlerExtension
@@ -53,23 +55,30 @@ func (a AuditLogger) Validate(_ graphql.ExecutableSchema) error {
 	return nil
 }
 
-//func (a AuditLogger) InterceptOperation(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
-//	op := graphql.GetOperationContext(ctx)
-//	m := &MetaData{
-//		Resolvers: map[string]bool{},
-//		Tags: map[string]map[string]bool{
-//			"hasRole": {},
-//			"lang":    {},
-//		},
-//	}
-//	op.Stats.SetExtension(auditLoggerExtension, m)
-//	return next(ctx)
-//}
+func (a AuditLogger) MutateOperationContext(ctx context.Context, rc *graphql.OperationContext) *gqlerror.Error {
+	fmt.Println("MutateOperationContext is called")
+	return nil
+}
+
+func (a AuditLogger) InterceptOperation(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
+	fmt.Println("InterceptOperation is called")
+	op := graphql.GetOperationContext(ctx)
+	m := &MetaData{
+		Resolvers: map[string]int{},
+		Tags: map[string]map[string]int{
+			"hasRole": {},
+			"lang":    {},
+		},
+	}
+	op.Stats.SetExtension(auditLoggerExtension, m)
+	return next(ctx)
+}
 
 func (a AuditLogger) InterceptField(ctx context.Context, next graphql.Resolver) (res interface{}, err error) {
 	op := graphql.GetOperationContext(ctx)
 	m, ok := op.Stats.GetExtension(auditLoggerExtension).(*MetaData)
 	if !ok {
+		fmt.Println("[InterceptField] No extension context")
 		m = &MetaData{
 			Resolvers: map[string]int{},
 			Tags: map[string]map[string]int{
@@ -84,7 +93,7 @@ func (a AuditLogger) InterceptField(ctx context.Context, next graphql.Resolver) 
 	callBy := fc.Object
 	field := fc.Field.Name
 	key := fmt.Sprintf("%s:%s", callBy, field)
-
+	fmt.Println("InterceptField is called: " + key)
 	if fc.IsResolver {
 		if callBy == "Query" || callBy == "Mutation" || callBy == "Subscription" {
 			_, found := m.Resolvers[key]
@@ -110,12 +119,14 @@ func (a AuditLogger) InterceptField(ctx context.Context, next graphql.Resolver) 
 }
 
 func (a AuditLogger) InterceptResponse(ctx context.Context, next graphql.ResponseHandler) *graphql.Response {
+	fmt.Println("InterceptResponse")
 	defer func() {
 		op := graphql.GetOperationContext(ctx)
 		operationName, _ := a.getOperation(ctx)
 
 		m, ok := op.Stats.GetExtension(auditLoggerExtension).(*MetaData)
 		if !ok {
+			fmt.Println("[InterceptResponse] No extension context")
 			m = &MetaData{
 				Resolvers: map[string]int{},
 				Tags: map[string]map[string]int{

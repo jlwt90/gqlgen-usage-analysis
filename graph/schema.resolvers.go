@@ -85,7 +85,6 @@ func (r *subscriptionResolver) CurrentTime(ctx context.Context) (<-chan *model.T
 		for {
 			// In our example we'll send the current time every second.
 			time.Sleep(1 * time.Second)
-			fmt.Println("Tick")
 
 			// Prepare your object.
 			currentTime := time.Now()
