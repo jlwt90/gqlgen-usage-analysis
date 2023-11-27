@@ -12,6 +12,22 @@ import (
 	"github.com/jlwt90/gqlgen-usage-analysis/graph/model"
 )
 
+// Teacher is the resolver for the teacher field.
+func (r *classResolver) Teacher(ctx context.Context, obj *model.Class) (*model.User, error) {
+	if obj.ID == "C1" {
+		return &model.User{
+			ID:    "U1",
+			Name:  "U1",
+			Class: &model.Class{ID: "C1"},
+		}, nil
+	}
+	return &model.User{
+		ID:    "U2",
+		Name:  "U2",
+		Class: &model.Class{ID: "C2"},
+	}, nil
+}
+
 // CreateTodo is the resolver for the createTodo field.
 func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
 	return &model.Todo{
@@ -26,22 +42,25 @@ func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) 
 func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
 	return []*model.Todo{
 		{
-			ID:   "T1",
-			Text: "t1",
-			Done: false,
-			User: nil,
+			ID:         "T1",
+			Text:       "t1",
+			Done:       false,
+			User:       nil,
+			AssignedTo: &model.User{ID: "U1", Name: "N1"},
 		},
 		{
-			ID:   "T2",
-			Text: "t2",
-			Done: true,
-			User: nil,
+			ID:         "T2",
+			Text:       "t2",
+			Done:       true,
+			User:       nil,
+			AssignedTo: &model.User{ID: "U1", Name: "N1"},
 		},
 		{
-			ID:   "T3",
-			Text: "t3",
-			Done: true,
-			User: nil,
+			ID:         "T3",
+			Text:       "t3",
+			Done:       true,
+			User:       nil,
+			AssignedTo: &model.User{ID: "U1", Name: "N1"},
 		},
 	}, nil
 }
@@ -51,24 +70,27 @@ func (r *queryResolver) Todo(ctx context.Context, id string) (*model.Todo, error
 	var obj *model.Todo
 	if id == "T1" {
 		obj = &model.Todo{
-			ID:   "T1",
-			Text: "t1",
-			Done: false,
-			User: nil,
+			ID:         "T1",
+			Text:       "t1",
+			Done:       false,
+			User:       nil,
+			AssignedTo: &model.User{ID: "U1", Name: "N1"},
 		}
 	} else if id == "T2" {
 		obj = &model.Todo{
-			ID:   "T2",
-			Text: "t2",
-			Done: true,
-			User: nil,
+			ID:         "T2",
+			Text:       "t2",
+			Done:       true,
+			User:       nil,
+			AssignedTo: &model.User{ID: "U1", Name: "N1"},
 		}
 	} else if id == "T3" {
 		obj = &model.Todo{
-			ID:   "T3",
-			Text: "t3",
-			Done: true,
-			User: nil,
+			ID:         "T3",
+			Text:       "t3",
+			Done:       true,
+			User:       nil,
+			AssignedTo: &model.User{ID: "U1", Name: "N1"},
 		}
 	}
 	return obj, nil
@@ -131,6 +153,24 @@ func (r *todoResolver) User(ctx context.Context, obj *model.Todo) (*model.User, 
 	}, nil
 }
 
+// Class is the resolver for the class field.
+func (r *userResolver) Class(ctx context.Context, obj *model.User) (*model.Class, error) {
+	if obj.ID == "U1" {
+		return &model.Class{
+			ID:   "C1",
+			Name: "Class1",
+		}, nil
+	} else {
+		return &model.Class{
+			ID:   "C2",
+			Name: "Class2",
+		}, nil
+	}
+}
+
+// Class returns ClassResolver implementation.
+func (r *Resolver) Class() ClassResolver { return &classResolver{r} }
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
@@ -143,7 +183,12 @@ func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionRes
 // Todo returns TodoResolver implementation.
 func (r *Resolver) Todo() TodoResolver { return &todoResolver{r} }
 
+// User returns UserResolver implementation.
+func (r *Resolver) User() UserResolver { return &userResolver{r} }
+
+type classResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
 type todoResolver struct{ *Resolver }
+type userResolver struct{ *Resolver }

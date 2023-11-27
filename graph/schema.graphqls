@@ -10,11 +10,19 @@ type Todo {
   text: String!
   done: Boolean! @hasRole(id: "r3")
   user: User!
+  assignedTo: User!
 }
 
 type User {
   id: ID!
   name: String! @hasRole(id: "r2")
+  class: Class!
+}
+
+type Class {
+  id: ID!
+  name: String!
+  teacher: User!
 }
 
 type Query {
